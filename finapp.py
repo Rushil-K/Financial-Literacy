@@ -11,9 +11,12 @@ from sklearn.linear_model import LinearRegression
 import openai
 from streamlit_chat import message
 
-# Download Sentiment Analyzer
+# Initialize Sentiment Analyzer
 nltk.download('vader_lexicon')
 sia = SentimentIntensityAnalyzer()
+
+# OpenAI API Key (Replace with actual key)
+openai.api_key = "your_openai_api_key"  # Replace with your OpenAI API key
 
 # ----------------- UI Layout -----------------
 st.title("📊 Open-Source AI Financial Advisor")
@@ -24,95 +27,43 @@ option = st.sidebar.selectbox(
     ["Financial Literacy", "Investment Analysis", "Market News & AI Insights", "AI Budgeting & Chatbot"]
 )
 
-# ----------------- AI-Driven Budgeting & Expense Tracking -----------------
-if option == "AI Budgeting & Chatbot":
-    st.subheader("💰 AI-Driven Budgeting & Financial Assistant")
-
-    # User Inputs
-    income = st.number_input("Enter Monthly Income (₹)", min_value=0.0)
-    rent = st.number_input("Rent Expenses (₹)", min_value=0.0)
-    food = st.number_input("Food & Groceries (₹)", min_value=0.0)
-    transport = st.number_input("Transport (₹)", min_value=0.0)
-    other_expenses = st.number_input("Other Expenses (₹)", min_value=0.0)
-
-    total_expense = rent + food + transport + other_expenses
-    savings = income - total_expense
-
-    st.write(f"**Total Monthly Expenses:** ₹{total_expense}")
-    st.write(f"💰 **Estimated Savings:** ₹{savings}")
-
-    if savings < 0:
-        st.error("⚠️ Your expenses exceed your income! Consider reducing unnecessary spending.")
-    elif savings < (0.2 * income):
-        st.warning("🔸 Your savings are below the recommended 20% of income.")
-    else:
-        st.success("✅ Your savings are on track!")
-
-    # AI-Driven Savings Recommendation
-    goal = st.selectbox("Choose Your Savings Goal", ["Emergency Fund", "Retirement", "Buying a House", "Wealth Growth"])
-    if goal == "Emergency Fund":
-        st.write("💡 **Tip:** Aim to save at least 6 months' worth of expenses in a liquid fund.")
-    elif goal == "Retirement":
-        st.write("💡 **Tip:** Start investing in **mutual funds, ETFs, or PPF** for long-term wealth creation.")
-    elif goal == "Buying a House":
-        st.write("💡 **Tip:** Maintain a **50-30-20 rule**, where 20% goes to your home purchase savings.")
-    else:
-        st.write("💡 **Tip:** Diversify across **stocks, gold, and high-yield mutual funds** for optimal returns.")
-
-    # ----------------- NLP-Based Financial Chatbot -----------------
-    st.subheader("💬 AI Financial Chatbot")
-    openai.api_key = "your_openai_api_key"  # Replace with actual OpenAI API key
-
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    user_input = st.text_input("Ask me anything about personal finance:")
+# ----------------- Financial Literacy Module -----------------
+if option == "Financial Literacy":
+    st.subheader("📖 Financial Literacy")
+    tab1, tab2, tab3, tab4 = st.tabs(["Budgeting", "Loans & Credit Score", "Savings", "Investment Basics"])
     
-    if user_input:
-        st.session_state.messages.append({"user": user_input})
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": user_input}]
-        )
-        bot_response = response["choices"][0]["message"]["content"]
-        st.session_state.messages.append({"bot": bot_response})
+    with tab1:
+        st.markdown("### Budget Planner")
+        income = st.number_input("Enter your Monthly Income", min_value=0.0)
+        expenses = st.number_input("Enter your Monthly Expenses", min_value=0.0)
+        savings = income - expenses
+        st.write(f"💰 Your Monthly Savings: **₹{savings}**")
+        st.progress(min(1, savings / max(1, income)))  # Show savings ratio
 
-    for msg in st.session_state.messages:
-        if "user" in msg:
-            message(msg["user"], is_user=True)
-        else:
-            message(msg["bot"])
+    with tab2:
+        st.markdown("### Loan & Credit Score Basics")
+        st.write("- Keep credit utilization low")
+        st.write("- Pay EMIs on time")
+        st.write("- Avoid frequent credit inquiries")
 
-# ----------------- AI-Driven Fraud Alerts & Risk Assessment -----------------
-elif option == "Market News & AI Insights":
-    st.subheader("📰 Market News & AI Insights")
+    with tab3:
+        st.markdown("### Best Saving Practices")
+        st.write("1. Follow the **50-30-20 rule**: 50% Needs, 30% Wants, 20% Savings.")
+        st.write("2. Automate savings.")
+        st.write("3. Invest in **FDs, RDs, or SIPs**.")
 
-    # Scrape Financial News
-    url = "https://www.moneycontrol.com/news/"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    headlines = [h.text.strip() for h in soup.find_all('h2')][:5]
+    with tab4:
+        st.markdown("### Investment Basics")
+        st.write("💡 **Stocks**: High risk, high return")
+        st.write("💡 **Mutual Funds**: Diversified, moderate risk")
+        st.write("💡 **ETFs**: Passive investing, lower fees")
+        st.write("💡 **Gold**: Hedge against inflation")
 
-    for headline in headlines:
-        score = sia.polarity_scores(headline)['compound']
-        sentiment = "📈 Positive" if score > 0.05 else "📉 Negative" if score < -0.05 else "⚖️ Neutral"
-        st.write(f"**{headline}** - {sentiment}")
-
-    # Fraud Alerts & Risk Assessment
-    st.subheader("🚨 AI-Driven Fraud Alerts")
-    fraud_data = {
-        "Ponzi Schemes": "Avoid investments that guarantee 'high returns with no risk'.",
-        "Fake Loan Offers": "Banks never ask for prepayment to process a loan.",
-        "Crypto Scams": "If it sounds too good to be true, it's likely a scam."
-    }
-    for fraud, tip in fraud_data.items():
-        st.warning(f"⚠️ **{fraud}**: {tip}")
-
-# ----------------- Personalized Investment Recommendations -----------------
+# ----------------- Investment Analysis Module -----------------
 elif option == "Investment Analysis":
     st.subheader("📊 Stock & Mutual Fund Analysis")
     ticker = st.text_input("Enter Stock Symbol (e.g., AAPL, TSLA, RELIANCE.NS):", "AAPL")
-
+    
     # Fetch Stock Data
     stock = yf.Ticker(ticker)
     hist = stock.history(period="6mo")
@@ -122,18 +73,12 @@ elif option == "Investment Analysis":
     fig.add_trace(go.Scatter(x=hist.index, y=hist['Close'], mode='lines', name=ticker))
     st.plotly_chart(fig)
 
+    # Moving Average & RSI Calculation
     hist['MA50'] = hist['Close'].rolling(50).mean()
     hist['RSI'] = 100 - (100 / (1 + (hist['Close'].diff().rolling(14).mean() / hist['Close'].diff().rolling(14).std())))
 
     st.write(f"**Current Price:** ₹{round(hist['Close'].iloc[-1], 2)}")
     st.write(f"**50-Day Moving Average:** ₹{round(hist['MA50'].iloc[-1], 2)}")
-
-    if hist['RSI'].iloc[-1] < 30:
-        st.write("✅ **Stock is Oversold. Good Buying Opportunity!**")
-    elif hist['RSI'].iloc[-1] > 70:
-        st.write("⚠️ **Stock is Overbought. Consider Selling!**")
-    else:
-        st.write("📈 **Stock is in a Neutral Zone. Hold or Wait.**")
 
     # AI-Powered Stock Prediction
     st.subheader("📊 AI Stock Prediction")
@@ -149,4 +94,54 @@ elif option == "Investment Analysis":
     else:
         st.warning("📉 **AI Recommendation: SELL**")
 
+# ----------------- Market News & AI Insights -----------------
+elif option == "Market News & AI Insights":
+    st.subheader("📰 Market News & AI Insights")
 
+    # Scrape Financial News
+    url = "https://www.moneycontrol.com/news/"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    headlines = [h.text.strip() for h in soup.find_all('h2')][:5]
+
+    for headline in headlines:
+        score = sia.polarity_scores(headline)['compound']
+        sentiment = "📈 Positive" if score > 0.05 else "📉 Negative" if score < -0.05 else "⚖️ Neutral"
+        st.write(f"**{headline}** - {sentiment}")
+
+# ----------------- AI Budgeting & Chatbot -----------------
+elif option == "AI Budgeting & Chatbot":
+    st.subheader("💰 AI-Driven Budgeting & Financial Assistant")
+
+    # User Inputs
+    income = st.number_input("Enter Monthly Income (₹)", min_value=0.0)
+    expenses = st.number_input("Enter Total Monthly Expenses (₹)", min_value=0.0)
+    savings = income - expenses
+
+    st.write(f"**Total Monthly Expenses:** ₹{expenses}")
+    st.write(f"💰 **Estimated Savings:** ₹{savings}")
+
+    # ----------------- NLP-Based Financial Chatbot -----------------
+    st.subheader("💬 AI Financial Chatbot")
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    user_input = st.text_input("Ask me anything about personal finance:")
+    
+    if user_input:
+        st.session_state.messages.append({"user": user_input})
+        client = openai.OpenAI()
+
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": user_input}]
+        )
+        bot_response = response.choices[0].message.content
+        st.session_state.messages.append({"bot": bot_response})
+
+    for msg in st.session_state.messages:
+        if "user" in msg:
+            message(msg["user"], is_user=True)
+        else:
+            message(msg["bot"])
