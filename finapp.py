@@ -21,9 +21,10 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 chat_model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
 def chatbot_response(user_input):
-    inputs = tokenizer(user_input, return_tensors="pt")
-    response_ids = chat_model.generate(**inputs)
-    return tokenizer.decode(response_ids[0], skip_special_tokens=True)
+    with torch.no_grad():  # Ensure no computation graph is created
+        inputs = tokenizer(user_input, return_tensors="pt")
+        response_ids = chat_model.generate(**inputs)
+        return tokenizer.decode(response_ids[0], skip_special_tokens=True)
 
 # ----------------- UI Layout -----------------
 st.title("📊 Open-Source AI Financial Advisor")
