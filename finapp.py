@@ -8,23 +8,10 @@ import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
-import torch
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 # Initialize Sentiment Analyzer
 nltk.download('vader_lexicon')
 sia = SentimentIntensityAnalyzer()
-
-# Load Open-Source Chatbot Model (Facebook BlenderBot)
-model_name = "facebook/blenderbot-400M-distill"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-chat_model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-
-def chatbot_response(user_input):
-    with torch.no_grad():  # Ensure no computation graph is created
-        inputs = tokenizer(user_input, return_tensors="pt")
-        response_ids = chat_model.generate(**inputs)
-        return tokenizer.decode(response_ids[0], skip_special_tokens=True)
 
 # ----------------- UI Layout -----------------
 st.title("📊 Open-Source AI Financial Advisor")
@@ -32,7 +19,7 @@ st.sidebar.header("Select a Section")
 
 option = st.sidebar.selectbox(
     "Choose Module", 
-    ["Financial Literacy", "Investment Analysis", "Market News & AI Insights", "AI Budgeting & Chatbot"]
+    ["Financial Literacy", "Investment Analysis", "Market News & AI Insights", "Hyperpersonalized Investment Prediction"]
 )
 
 # ----------------- Financial Literacy Module -----------------
@@ -117,35 +104,33 @@ elif option == "Market News & AI Insights":
         sentiment = "📈 Positive" if score > 0.05 else "📉 Negative" if score < -0.05 else "⚖️ Neutral"
         st.write(f"**{headline}** - {sentiment}")
 
-# ----------------- AI Budgeting & Chatbot -----------------
-elif option == "AI Budgeting & Chatbot":
-    st.subheader("💰 AI-Driven Budgeting & Financial Assistant")
+# ----------------- Hyperpersonalized Investment Prediction -----------------
+elif option == "Hyperpersonalized Investment Prediction":
+    st.subheader("🔍 Personalized Investment Strategy")
 
-    # User Inputs
-    income = st.number_input("Enter Monthly Income (₹)", min_value=0.0)
-    expenses = st.number_input("Enter Total Monthly Expenses (₹)", min_value=0.0)
-    savings = income - expenses
+    # User Persona Inputs
+    st.markdown("### 🏦 Provide Your Financial Information")
+    age = st.slider("Your Age", 18, 65, 30)
+    income = st.number_input("Enter Your Annual Income (₹)", min_value=50000, step=10000)
+    risk_profile = st.selectbox("Risk Tolerance", ["Low", "Moderate", "High"])
+    investment_goal = st.selectbox("Investment Goal", ["Wealth Growth", "Retirement", "Education", "Emergency Fund"])
 
-    st.write(f"**Total Monthly Expenses:** ₹{expenses}")
-    st.write(f"💰 **Estimated Savings:** ₹{savings}")
+    # Personalized Investment Strategy
+    st.markdown("### 📈 Recommended Portfolio")
+    
+    if risk_profile == "Low":
+        st.write("✅ **60% Debt Instruments (FDs, Bonds, PPFs)**")
+        st.write("✅ **30% Mutual Funds (Low-risk Index Funds)**")
+        st.write("✅ **10% Gold**")
+    elif risk_profile == "Moderate":
+        st.write("✅ **40% Mutual Funds (Balanced Funds, Blue-chip Stocks)**")
+        st.write("✅ **30% Debt Instruments**")
+        st.write("✅ **20% Direct Stocks (Large-cap, ETFs)**")
+        st.write("✅ **10% Gold**")
+    else:
+        st.write("✅ **60% Direct Stocks (Mid & Small-cap, Growth Stocks)**")
+        st.write("✅ **30% Mutual Funds (Equity-heavy, High-growth Funds)**")
+        st.write("✅ **10% Crypto/Gold**")
 
-    # ----------------- NLP-Based Financial Chatbot -----------------
-    st.subheader("💬 Open-Source AI Financial Chatbot")
+    st.success("📊 Your investment strategy is optimized based on your financial profile.")
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    user_input = st.text_input("Ask me anything about personal finance:")
-
-    if user_input:
-        st.session_state.messages.append({"user": user_input})
-        
-        # Generate chatbot response
-        bot_response = chatbot_response(user_input)
-        st.session_state.messages.append({"bot": bot_response})
-
-    for msg in st.session_state.messages:
-        if "user" in msg:
-            st.write(f"👤 **You:** {msg['user']}")
-        else:
-            st.write(f"🤖 **Bot:** {msg['bot']}")
