@@ -10,4 +10,4 @@ scikit-learn
 openai
 streamlit-chat
 matplotlib
-
+tiktoken
