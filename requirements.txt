@@ -11,3 +11,4 @@ openai
 streamlit-chat
 matplotlib
 tiktoken
+transformers
