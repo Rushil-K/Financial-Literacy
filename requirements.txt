@@ -3,7 +3,8 @@ pandas
 numpy
 yfinance
 requests
-beautifulsoup4
-nltk
 plotly
 scikit-learn
+nltk
+transformers
+torch
