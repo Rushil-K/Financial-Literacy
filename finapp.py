@@ -15,9 +15,6 @@ from streamlit_chat import message
 nltk.download('vader_lexicon')
 sia = SentimentIntensityAnalyzer()
 
-# OpenAI API Key (Replace with actual key)
-openai.api_key = "your_openai_api_key"  # Replace with your OpenAI API key
-
 # ----------------- UI Layout -----------------
 st.title("📊 Open-Source AI Financial Advisor")
 st.sidebar.header("Select a Section")
@@ -124,24 +121,33 @@ elif option == "AI Budgeting & Chatbot":
     # ----------------- NLP-Based Financial Chatbot -----------------
     st.subheader("💬 AI Financial Chatbot")
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+    # Allow user to input OpenAI API key
+    openai_api_key = st.text_input("🔑 Enter your OpenAI API Key", type="password")
 
-    user_input = st.text_input("Ask me anything about personal finance:")
-    
-    if user_input:
-        st.session_state.messages.append({"user": user_input})
-        client = openai.OpenAI()
+    if openai_api_key:
+        openai.api_key = openai_api_key  # Set API Key
 
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": user_input}]
-        )
-        bot_response = response.choices[0].message.content
-        st.session_state.messages.append({"bot": bot_response})
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
 
-    for msg in st.session_state.messages:
-        if "user" in msg:
-            message(msg["user"], is_user=True)
-        else:
-            message(msg["bot"])
+        user_input = st.text_input("Ask me anything about personal finance:")
+        
+        if user_input:
+            st.session_state.messages.append({"user": user_input})
+            client = openai.OpenAI(api_key=openai_api_key)  # Use user-provided key
+
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": user_input}]
+            )
+            bot_response = response.choices[0].message.content
+            st.session_state.messages.append({"bot": bot_response})
+
+        for msg in st.session_state.messages:
+            if "user" in msg:
+                message(msg["user"], is_user=True)
+            else:
+                message(msg["bot"])
+    else:
+        st.warning("⚠️ Please enter your OpenAI API key to enable the chatbot.")
+
