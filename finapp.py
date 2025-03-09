@@ -8,12 +8,14 @@ import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
-import openai
-from streamlit_chat import message
+from transformers import pipeline
 
 # Initialize Sentiment Analyzer
 nltk.download('vader_lexicon')
 sia = SentimentIntensityAnalyzer()
+
+# Load Open-Source Chatbot Model (Hugging Face)
+chatbot = pipeline("text-generation", model="microsoft/DialoGPT-small")
 
 # ----------------- UI Layout -----------------
 st.title("📊 Open-Source AI Financial Advisor")
@@ -119,35 +121,23 @@ elif option == "AI Budgeting & Chatbot":
     st.write(f"💰 **Estimated Savings:** ₹{savings}")
 
     # ----------------- NLP-Based Financial Chatbot -----------------
-    st.subheader("💬 AI Financial Chatbot")
+    st.subheader("💬 Open-Source AI Financial Chatbot")
 
-    # Allow user to input OpenAI API key
-    openai_api_key = st.text_input("🔑 Enter your OpenAI API Key", type="password")
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-    if openai_api_key:
-        openai.api_key = openai_api_key  # Set API Key
+    user_input = st.text_input("Ask me anything about personal finance:")
 
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-
-        user_input = st.text_input("Ask me anything about personal finance:")
+    if user_input:
+        st.session_state.messages.append({"user": user_input})
         
-        if user_input:
-            st.session_state.messages.append({"user": user_input})
-            client = openai.OpenAI(api_key=openai_api_key)  # Use user-provided key
+        # Generate chatbot response
+        bot_response = chatbot(user_input, max_length=200, num_return_sequences=1)[0]['generated_text']
+        st.session_state.messages.append({"bot": bot_response})
 
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": user_input}]
-            )
-            bot_response = response.choices[0].message.content
-            st.session_state.messages.append({"bot": bot_response})
-
-        for msg in st.session_state.messages:
-            if "user" in msg:
-                message(msg["user"], is_user=True)
-            else:
-                message(msg["bot"])
-    else:
-        st.warning("⚠️ Please enter your OpenAI API key to enable the chatbot.")
+    for msg in st.session_state.messages:
+        if "user" in msg:
+            st.write(f"👤 **You:** {msg['user']}")
+        else:
+            st.write(f"🤖 **Bot:** {msg['bot']}")
 
