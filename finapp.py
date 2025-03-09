@@ -8,14 +8,22 @@ import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
-from transformers import pipeline
+import torch
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 # Initialize Sentiment Analyzer
 nltk.download('vader_lexicon')
 sia = SentimentIntensityAnalyzer()
 
-# Load Open-Source Chatbot Model (Hugging Face)
-chatbot = pipeline("text-generation", model="microsoft/DialoGPT-small")
+# Load Open-Source Chatbot Model (Facebook BlenderBot)
+model_name = "facebook/blenderbot-400M-distill"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+chat_model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+def chatbot_response(user_input):
+    inputs = tokenizer(user_input, return_tensors="pt")
+    response_ids = chat_model.generate(**inputs)
+    return tokenizer.decode(response_ids[0], skip_special_tokens=True)
 
 # ----------------- UI Layout -----------------
 st.title("📊 Open-Source AI Financial Advisor")
@@ -132,7 +140,7 @@ elif option == "AI Budgeting & Chatbot":
         st.session_state.messages.append({"user": user_input})
         
         # Generate chatbot response
-        bot_response = chatbot(user_input, max_length=200, num_return_sequences=1)[0]['generated_text']
+        bot_response = chatbot_response(user_input)
         st.session_state.messages.append({"bot": bot_response})
 
     for msg in st.session_state.messages:
@@ -140,4 +148,3 @@ elif option == "AI Budgeting & Chatbot":
             st.write(f"👤 **You:** {msg['user']}")
         else:
             st.write(f"🤖 **Bot:** {msg['bot']}")
-
